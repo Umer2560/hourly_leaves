@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include hourly_leaves *.css
+recursive-include hourly_leaves *.csv
+recursive-include hourly_leaves *.html
+recursive-include hourly_leaves *.ico
+recursive-include hourly_leaves *.js
+recursive-include hourly_leaves *.json
+recursive-include hourly_leaves *.md
+recursive-include hourly_leaves *.png
+recursive-include hourly_leaves *.py
+recursive-include hourly_leaves *.svg
+recursive-include hourly_leaves *.txt
+recursive-exclude hourly_leaves *.pyc
