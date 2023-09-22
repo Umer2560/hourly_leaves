@@ -29,7 +29,7 @@ app_license = "MIT"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+doctype_js = {"Leave Application" : "public/js/leave_application.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -94,9 +94,10 @@ app_license = "MIT"
 # ---------------
 # Override standard doctype classes
 
-# override_doctype_class = {
-#	"ToDo": "custom_app.overrides.CustomToDo"
-# }
+override_doctype_class = {
+	"Leave Allocation": "hourly_leaves.overrides.leave_allocation.LeaveAllocation",
+	"Leave Application": "hourly_leaves.overrides.leave_application.LeaveApplication"
+}
 
 # Document Events
 # ---------------
@@ -190,3 +191,8 @@ app_license = "MIT"
 # auth_hooks = [
 #	"hourly_leaves.auth.validate"
 # ]
+
+fixtures = [
+	{"dt": "Custom Field", "filters": [["name", "in", ["Leave Application-hours_day_wise", "Leave Application-hours_required", "Leave Application-apply_hours", "Leave Application-available_hours", "Leave Application-total_hours", "Leave Ledger Entry-hours", "Leave Allocation-total_hours"]]]}
+	
+	]
