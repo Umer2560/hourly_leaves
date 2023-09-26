@@ -140,9 +140,9 @@ override_doctype_class = {
 # Overriding Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-#	"frappe.desk.doctype.event.event.get_events": "hourly_leaves.event.get_events"
-# }
+override_whitelisted_methods = {
+	"hrms.hr.utils.allocate_earned_leaves": "hourly_leaves.overrides.leave_application.allocate_earned_leaves"
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
@@ -193,6 +193,6 @@ override_doctype_class = {
 # ]
 
 fixtures = [
-	{"dt": "Custom Field", "filters": [["name", "in", ["Leave Application-hours_day_wise", "Leave Application-hours_required", "Leave Application-apply_hours", "Leave Application-available_hours", "Leave Application-total_hours", "Leave Ledger Entry-hours", "Leave Allocation-total_hours"]]]}
+	{"dt": "Custom Field", "filters": [["name", "in", ["Leave Application-hours_day_wise", "Leave Application-hours_required", "Leave Application-apply_hours", "Leave Application-available_hours", "Leave Application-total_hours", "Leave Ledger Entry-hours", "Leave Allocation-total_hours", "Leave Application-specify_hours_date"]]]}
 	
 	]

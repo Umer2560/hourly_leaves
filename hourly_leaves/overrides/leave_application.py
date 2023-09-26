@@ -4,6 +4,7 @@ from typing import Dict, Optional, Tuple, Union
 import frappe
 from frappe import _
 from frappe.query_builder.functions import Max, Min, Sum
+from erpnext.buying.doctype.supplier_scorecard.supplier_scorecard import daterange
 from frappe.utils import (
 	add_days,
 	cint,
@@ -28,6 +29,11 @@ from hrms.hr.utils import (
 	set_employee_name,
 	share_doc_with_approver,
 	validate_active_employee,
+	get_earned_leaves,
+	get_leave_allocations,
+	check_effective_date,
+	get_monthly_earned_leave,
+	create_additional_leave_ledger_entry,
 )
 
 
@@ -38,7 +44,7 @@ class LeaveApplication(LeaveApplication):
 		validate_active_employee(self.employee)
 		set_employee_name(self)
 		LeaveApplication.validate_dates(self)
-		LeaveApplication.validate_balance_leaves(self)
+		self.validate_balance_leaves()
 		LeaveApplication.validate_leave_overlap(self)
 		LeaveApplication.validate_max_days(self)
 		LeaveApplication.show_block_day_warning(self)
@@ -51,13 +57,51 @@ class LeaveApplication(LeaveApplication):
 			LeaveApplication.validate_optional_leave(self)
 		LeaveApplication.validate_applicable_after(self)
 		self.check_hours_applied()
+	def validate_balance_leaves(self):
+		if self.from_date and self.to_date:
+			self.total_leave_days = get_number_of_leave_days(
+				self.employee, self.leave_type, self.from_date, self.to_date, self.half_day, self.half_day_date, self.hours_required, self.specify_hours_date
+			)
+
+			if self.total_leave_days <= 0:
+				frappe.throw(
+					_(
+						"The day(s) on which you are applying for leave are holidays. You need not apply for leave."
+					)
+				)
+
+			if not is_lwp(self.leave_type):
+				leave_balance = get_leave_balance_on(
+					self.employee,
+					self.leave_type,
+					self.from_date,
+					self.to_date,
+					consider_all_leaves_in_the_allocation_period=True,
+					for_consumption=True,
+				)
+				self.leave_balance = leave_balance.get("leave_balance")
+				leave_balance_for_consumption = leave_balance.get("leave_balance_for_consumption")
+
+				if self.status != "Rejected" and (
+					leave_balance_for_consumption < self.total_leave_days or not leave_balance_for_consumption
+				):
+					self.show_insufficient_balance_message(leave_balance_for_consumption)
 	def check_hours_applied(self):
+		get_standard_hours = frappe.db.get_value("HR Settings", None, "standard_working_hours")
 		self.hours_day_wise = 0.0
-		if not self.hours_required:
-			self.apply_hours = 0.0
-			get_standard_hours = frappe.db.get_value("HR Settings", None, "standard_working_hours")
-			if get_standard_hours:
-				self.hours_day_wise = float(self.total_leave_days) * float(get_standard_hours)
+		
+		if float(self.available_hours) < float(get_standard_hours):
+			self.apply_hours = float(self.available_hours)
+		else:
+			if self.hours_required:
+				if get_standard_hours:
+					if float(self.apply_hours) > float(get_standard_hours):
+						frappe.throw("Applying Hours must be Less or equal to the Standard Working Hours")
+				self.hours_day_wise = (float(self.total_leave_days) - 0.5) * float(get_standard_hours)
+			else:
+				self.apply_hours = 0.0
+				if get_standard_hours:
+					self.hours_day_wise = float(self.total_leave_days) * float(get_standard_hours)
 		if (float(self.apply_hours) + float(self.hours_day_wise)) > float(self.available_hours):
 			frappe.throw("Applying Hours must be Less then Available Hours")
 			
@@ -69,7 +113,7 @@ class LeaveApplication(LeaveApplication):
 			)
 
 		LeaveApplication.validate_back_dated_application(self)
-		LeaveApplication.update_attendance(self)
+		self.update_attendance()
 
 		# notify leave applier about approval
 		if frappe.db.get_single_value("HR Settings", "send_leave_notification"):
@@ -77,6 +121,60 @@ class LeaveApplication(LeaveApplication):
 
 		self.create_leave_ledger_entry()
 		self.reload()
+		
+	def update_attendance(self):
+		if self.status != "Approved":
+			return
+
+		holiday_dates = []
+		if not frappe.db.get_value("Leave Type", self.leave_type, "include_holiday"):
+			holiday_dates = get_holiday_dates_for_employee(self.employee, self.from_date, self.to_date)
+
+		for dt in daterange(getdate(self.from_date), getdate(self.to_date)):
+			date = dt.strftime("%Y-%m-%d")
+			attendance_name = frappe.db.exists(
+				"Attendance", dict(employee=self.employee, attendance_date=date, docstatus=("!=", 2))
+			)
+
+			# don't mark attendance for holidays
+			# if leave type does not include holidays within leaves as leaves
+			if date in holiday_dates:
+				if attendance_name:
+					# cancel and delete existing attendance for holidays
+					attendance = frappe.get_doc("Attendance", attendance_name)
+					attendance.flags.ignore_permissions = True
+					if attendance.docstatus == 1:
+						attendance.cancel()
+					frappe.delete_doc("Attendance", attendance_name, force=1)
+				continue
+
+			self.create_or_update_attendance(attendance_name, date)
+
+	def create_or_update_attendance(self, attendance_name, date):
+		status = (
+			"Half Day"
+			if (self.half_day_date and getdate(date) == getdate(self.half_day_date)) or (self.specify_hours_date and getdate(date) == getdate(self.specify_hours_date))
+			else "On Leave"
+		)
+
+		if attendance_name:
+			# update existing attendance, change absent to on leave
+			doc = frappe.get_doc("Attendance", attendance_name)
+			if doc.status != status:
+				doc.db_set({"status": status, "leave_type": self.leave_type, "leave_application": self.name})
+		else:
+			# make new attendance and submit it
+			doc = frappe.new_doc("Attendance")
+			doc.employee = self.employee
+			doc.employee_name = self.employee_name
+			doc.attendance_date = date
+			doc.company = self.company
+			doc.leave_type = self.leave_type
+			doc.leave_application = self.name
+			doc.status = status
+			doc.flags.ignore_validate = True
+			doc.insert(ignore_permissions=True)
+			doc.submit()	
 		
 	def create_leave_ledger_entry(self, submit=True):
 		if self.status != "Approved" and submit:
@@ -111,8 +209,8 @@ class LeaveApplication(LeaveApplication):
 		raise_exception = False if frappe.flags.in_patch else True
 
 		leaves = get_number_of_leave_days(
-			self.employee, self.leave_type, self.from_date, expiry_date, self.half_day, self.half_day_date
-		)
+				self.employee, self.leave_type, start_date, self.to_date, self.half_day, self.half_day_date, self.hours_required, self.specify_hours_date
+			)
 
 		if leaves:
 			args = dict(
@@ -129,7 +227,7 @@ class LeaveApplication(LeaveApplication):
 		if getdate(expiry_date) != getdate(self.to_date):
 			start_date = add_days(expiry_date, 1)
 			leaves = get_number_of_leave_days(
-				self.employee, self.leave_type, start_date, self.to_date, self.half_day, self.half_day_date
+				self.employee, self.leave_type, start_date, self.to_date, self.half_day, self.half_day_date, self.hours_required, self.specify_hours_date
 			)
 
 			if leaves:
@@ -163,6 +261,8 @@ def get_number_of_leave_days(
 	to_date: datetime.date,
 	half_day: Union[int, str, None] = None,
 	half_day_date: Union[datetime.date, str, None] = None,
+	hours_required: Union[int, str, None] = None,
+	specify_hours_date: Union[datetime.date, str, None] = None,
 	holiday_list: Optional[str] = None,
 ) -> float:
 	"""Returns number of leave days between 2 dates after considering half day and holidays
@@ -172,6 +272,16 @@ def get_number_of_leave_days(
 		if getdate(from_date) == getdate(to_date):
 			number_of_days = 0.5
 		elif half_day_date and getdate(from_date) <= getdate(half_day_date) <= getdate(to_date):
+			frappe.msgprint("elif")
+			number_of_days = date_diff(to_date, from_date) + 0.5
+		elif specify_hours_date and getdate(from_date) <= getdate(specify_hours_date) <= getdate(to_date):
+			number_of_days = date_diff(to_date, from_date) + 0.5
+		else:
+			number_of_days = date_diff(to_date, from_date) + 1
+	elif cint(hours_required) == 1:
+		if getdate(from_date) == getdate(to_date):
+			number_of_days = 0.5
+		elif specify_hours_date and getdate(from_date) <= getdate(specify_hours_date) <= getdate(to_date):
 			number_of_days = date_diff(to_date, from_date) + 0.5
 		else:
 			number_of_days = date_diff(to_date, from_date) + 1
@@ -407,12 +517,19 @@ def get_leaves_for_period(
 				leave_entry.to_date = to_date
 
 			half_day = 0
+			hours_required = 0
+			specify_hours_date = None
 			half_day_date = None
+			
 			# fetch half day date for leaves with half days
 			if leave_entry.leaves % 1:
 				half_day = 1
 				half_day_date = frappe.db.get_value(
 					"Leave Application", {"name": leave_entry.transaction_name}, ["half_day_date"]
+				)
+				hours_required = 1
+				specify_hours_date = frappe.db.get_value(
+					"Leave Application", {"name": leave_entry.transaction_name}, ["specify_hours_date"]
 				)
 
 			leave_days += (
@@ -423,6 +540,8 @@ def get_leaves_for_period(
 					leave_entry.to_date,
 					half_day,
 					half_day_date,
+					hours_required,
+					specify_hours_date,
 					holiday_list=leave_entry.holiday_list,
 				)
 				* -1
@@ -688,3 +807,68 @@ def get_leave_approver(employee):
 		)
 
 	return leave_approver
+	
+def allocate_earned_leaves():
+	"""Allocate earned leaves to Employees"""
+	e_leave_types = get_earned_leaves()
+	today = getdate()
+
+	for e_leave_type in e_leave_types:
+
+		leave_allocations = get_leave_allocations(today, e_leave_type.name)
+
+		for allocation in leave_allocations:
+
+			if not allocation.leave_policy_assignment and not allocation.leave_policy:
+				continue
+
+			leave_policy = (
+				allocation.leave_policy
+				if allocation.leave_policy
+				else frappe.db.get_value(
+					"Leave Policy Assignment", allocation.leave_policy_assignment, ["leave_policy"]
+				)
+			)
+
+			annual_allocation = frappe.db.get_value(
+				"Leave Policy Detail",
+				filters={"parent": leave_policy, "leave_type": e_leave_type.name},
+				fieldname=["annual_allocation"],
+			)
+
+			from_date = allocation.from_date
+
+			if e_leave_type.allocate_on_day == "Date of Joining":
+				from_date = frappe.db.get_value("Employee", allocation.employee, "date_of_joining")
+
+			if check_effective_date(
+				from_date, today, e_leave_type.earned_leave_frequency, e_leave_type.allocate_on_day
+			):
+				update_previous_leave_allocation(allocation, annual_allocation, e_leave_type)
+				
+def update_previous_leave_allocation(allocation, annual_allocation, e_leave_type):
+	earned_leaves = get_monthly_earned_leave(
+		annual_allocation, e_leave_type.earned_leave_frequency, e_leave_type.rounding
+	)
+
+	allocation = frappe.get_doc("Leave Allocation", allocation.name)
+	new_allocation = flt(allocation.total_leaves_allocated) + flt(earned_leaves)
+
+	if new_allocation > e_leave_type.max_leaves_allowed and e_leave_type.max_leaves_allowed > 0:
+		new_allocation = e_leave_type.max_leaves_allowed
+
+	if new_allocation != allocation.total_leaves_allocated:
+		today_date = today()
+
+		allocation.db_set("total_leaves_allocated", new_allocation, update_modified=False)
+		#allocation.db_set("hours", new_allocation, update_modified=False)
+		create_additional_leave_ledger_entry(allocation, earned_leaves, today_date)
+
+		if e_leave_type.allocate_on_day:
+			text = _(
+				"Allocated {0} leave(s) via scheduler on {1} based on the 'Allocate on Day' option set to {2}"
+			).format(
+				frappe.bold(earned_leaves), frappe.bold(formatdate(today_date)), e_leave_type.allocate_on_day
+			)
+
+		allocation.add_comment(comment_type="Info", text=text)
