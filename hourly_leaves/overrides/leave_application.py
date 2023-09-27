@@ -319,6 +319,7 @@ def get_leave_details(employee, date):
 			"remaining_leaves": remaining_leaves['leave_balance'],
 			"total_hours": remaining_leaves['total_hours'],
 			"remaining_hours": remaining_leaves['remaining_hours'],
+			"total_hours_of_leaves_taken": remaining_leaves['total_hours_of_leaves_taken'],
 		}
 
 	# is used in set query
@@ -368,6 +369,7 @@ def get_leave_balance_on(
 	remaining_leaves = get_remaining_leaves(allocation, leaves_taken[0], date, cf_expiry)
 	remaining_leaves['remaining_hours'] = allocation['total_hours'] + (leaves_taken[1])
 	remaining_leaves['total_hours'] = allocation['total_hours']
+	remaining_leaves['total_hours_of_leaves_taken'] = allocation['total_hours'] - (allocation['total_hours'] + (leaves_taken[1]))
 	
 	return remaining_leaves
 

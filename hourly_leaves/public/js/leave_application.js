@@ -102,6 +102,7 @@ frappe.ui.form.on('Leave Application', {
 					if (!r.exc && r.message) {
 						frm.set_value('available_hours', r.message['remaining_hours']);
 						frm.set_value('total_hours', r.message['total_hours']);
+						frm.set_value('total_hours_of_leaves_taken', r.message['total_hours_of_leaves_taken']);
 					} else {
 						frm.set_value('available_hours', "0");
 					}
