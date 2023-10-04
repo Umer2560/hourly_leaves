@@ -193,6 +193,6 @@ override_whitelisted_methods = {
 # ]
 
 fixtures = [
-	{"dt": "Custom Field", "filters": [["name", "in", ["Leave Application-hours_day_wise", "Leave Application-hours_required", "Leave Application-apply_hours", "Leave Application-available_hours", "Leave Application-total_hours", "Leave Ledger Entry-hours", "Leave Allocation-total_hours", "Leave Application-specify_hours_date", "Leave Application-total_hours_of_leaves_taken"]]]}
+	{"dt": "Custom Field", "filters": [["name", "in", ["Leave Application-hours_day_wise", "Leave Application-hours_required", "Leave Application-apply_hours", "Leave Application-available_hours", "Leave Application-total_hours", "Leave Ledger Entry-hours", "Leave Allocation-total_hours", "Leave Application-specify_hours_date", "Leave Application-total_hours_of_leaves_taken", "Leave Application-total_hours_applied"]]]}
 	
 	]

@@ -104,6 +104,8 @@ class LeaveApplication(LeaveApplication):
 					self.hours_day_wise = float(self.total_leave_days) * float(get_standard_hours)
 		if (float(self.apply_hours) + float(self.hours_day_wise)) > float(self.available_hours):
 			frappe.throw("Applying Hours must be Less then Available Hours")
+		
+		self.total_hours_applied = float(self.hours_day_wise) + float(self.apply_hours)
 			
 		
 	def on_submit(self):
