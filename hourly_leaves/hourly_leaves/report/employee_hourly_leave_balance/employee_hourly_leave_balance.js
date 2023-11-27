@@ -5,6 +5,14 @@
 frappe.query_reports["Employee Hourly Leave Balance"] = {
 	"filters": [
 		{
+			"fieldname": "company",
+			"label": __("Company"),
+			"fieldtype": "Link",
+			"options": "Company",
+			"reqd": 1,
+			"default": frappe.defaults.get_user_default("Company")
+		},
+		{
 			"fieldname": "from_date",
 			"label": __("From Date"),
 			"fieldtype": "Date",
@@ -17,14 +25,6 @@ frappe.query_reports["Employee Hourly Leave Balance"] = {
 			"fieldtype": "Date",
 			"reqd": 1,
 			"default": frappe.defaults.get_default("year_end_date")
-		},
-		{
-			"fieldname": "company",
-			"label": __("Company"),
-			"fieldtype": "Link",
-			"options": "Company",
-			"reqd": 1,
-			"default": frappe.defaults.get_user_default("Company")
 		},
 		{
 			"fieldname": "employee",

@@ -10,12 +10,12 @@ def execute(filters=None):
 
 def get_columns():
     return [
-        _("Employee") + ":Link/Employee:120",
-        _("Employee Name") + ":Data:120",
-        _("Leave Type") + ":Link/Leave Type:120",
-        _("Total Hours") + ":Float:120",
-        _("Apply Hours") + ":Float:120",
-        _("Hours Remaining") + ":Float:120"
+        _("Employee") + ":Link/Employee:150",
+        _("Employee Name") + ":Data:150",
+        _("Leave Type") + ":Link/Leave Type:150",
+        _("Total Hours") + ":Float:150",
+        _("Hours Taken") + ":Float:150",
+        _("Hours Remaining") + ":Float:150"
     ]
 
 def get_hourly_leaves(filters):
@@ -23,7 +23,6 @@ def get_hourly_leaves(filters):
     query = """ select employee, employee_name, sum(hours), leave_type, transaction_type from `tabLeave Ledger Entry` where is_expired = 0 {0} group by employee, leave_type, transaction_type order by employee, leave_type """.format(cond)
     
     leave_applications = frappe.db.sql(query, as_dict = 1)
-    frappe.msgprint(frappe.as_json(leave_applications))
     #for x in leave_applications:
     consolidated_data = {}
 
@@ -39,7 +38,7 @@ def get_hourly_leaves(filters):
                 "employee": employee,
                 "employee_name": entry["employee_name"],
                 "leave_type": leave_type,
-                "apply_hours": 0.0,
+                "hours_taken": 0.0,
                 "total_hours": 0.0,
                 "hours_remaining": 0.0
             }
@@ -49,16 +48,13 @@ def get_hourly_leaves(filters):
             consolidated_data[(employee, leave_type)]["total_hours"] += hours
             consolidated_data[(employee, leave_type)]["hours_remaining"] += hours
         elif entry["transaction_type"] == "Leave Application":
-            consolidated_data[(employee, leave_type)]["apply_hours"] += hours
+            consolidated_data[(employee, leave_type)]["hours_taken"] += hours
             consolidated_data[(employee, leave_type)]["hours_remaining"] += hours
 
 	
 
     # Convert the dictionary values to a list
     result_list = list(consolidated_data.values())
-    
-    # Print the result
-    frappe.msgprint(frappe.as_json(result_list))
         
     return result_list
     
