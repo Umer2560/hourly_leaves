@@ -122,6 +122,8 @@ frappe.ui.form.on('Leave Application', {
 					date: frm.doc.from_date || frm.doc.posting_date
 				},
 				callback: function(r) {
+					console.log("-----------------")
+					console.log(r.message);
 					if (!r.exc && r.message['leave_allocation']) {
 						leave_details = r.message['leave_allocation'];
 					}

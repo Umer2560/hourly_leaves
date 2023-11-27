@@ -1,0 +1,26 @@
+{
+ "add_total_row": 0,
+ "columns": [],
+ "creation": "2023-11-25 20:35:20.162457",
+ "disable_prepared_report": 0,
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "filters": [],
+ "idx": 0,
+ "is_standard": "Yes",
+ "modified": "2023-11-25 20:35:20.162457",
+ "modified_by": "Administrator",
+ "module": "Hourly Leaves",
+ "name": "Employee Hourly Leave Balance",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "ref_doctype": "Leave Application",
+ "report_name": "Employee Hourly Leave Balance",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "HR Manager"
+  }
+ ]
+}
