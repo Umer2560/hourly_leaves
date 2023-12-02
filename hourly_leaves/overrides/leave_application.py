@@ -57,6 +57,13 @@ class LeaveApplication(LeaveApplication):
 			LeaveApplication.validate_optional_leave(self)
 		LeaveApplication.validate_applicable_after(self)
 		self.check_hours_applied()
+		self.ceate_leaves()
+	def ceate_leaves(self):
+		default_day = 1.0
+		get_standard_hours = frappe.db.get_value("HR Settings", None, "standard_working_hours")
+		if get_standard_hours:
+			default_day = 1.0 / float(get_standard_hours)
+		self.total_leave_days = float(default_day) * float(self.apply_hours)
 	def validate_balance_leaves(self):
 		if self.from_date and self.to_date:
 			self.total_leave_days = get_number_of_leave_days(
@@ -274,7 +281,6 @@ def get_number_of_leave_days(
 		if getdate(from_date) == getdate(to_date):
 			number_of_days = 0.5
 		elif half_day_date and getdate(from_date) <= getdate(half_day_date) <= getdate(to_date):
-			frappe.msgprint("elif")
 			number_of_days = date_diff(to_date, from_date) + 0.5
 		elif specify_hours_date and getdate(from_date) <= getdate(specify_hours_date) <= getdate(to_date):
 			number_of_days = date_diff(to_date, from_date) + 0.5
@@ -536,7 +542,7 @@ def get_leaves_for_period(
 					"Leave Application", {"name": leave_entry.transaction_name}, ["specify_hours_date"]
 				)
 
-			leave_days += (
+			'''leave_days += (
 				get_number_of_leave_days(
 					employee,
 					leave_type,
@@ -549,7 +555,8 @@ def get_leaves_for_period(
 					holiday_list=leave_entry.holiday_list,
 				)
 				* -1
-			)
+			)'''
+			leave_days += leave_entry.leaves
 
 	return leave_days, leave_hours
 
