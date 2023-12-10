@@ -97,6 +97,7 @@ doctype_js = {"Leave Application" : "public/js/leave_application.js"}
 override_doctype_class = {
 	"Leave Allocation": "hourly_leaves.overrides.leave_allocation.LeaveAllocation",
 	"Leave Application": "hourly_leaves.overrides.leave_application.LeaveApplication"
+	#"Employee Transfer": "hourly_leaves.overrides.employee_transfer.EmployeeTransfer"
 }
 
 # Document Events
@@ -114,13 +115,14 @@ override_doctype_class = {
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
+scheduler_events = {
 #	"all": [
 #		"hourly_leaves.tasks.all"
 #	],
-#	"daily": [
-#		"hourly_leaves.tasks.daily"
-#	],
+	"daily": [
+		"hourly_leaves.overrides.employee_transfer.update_emp_transfer",
+		"hourly_leaves.overrides.employee_promotion.update_emp_promotion"
+	],
 #	"hourly": [
 #		"hourly_leaves.tasks.hourly"
 #	],
@@ -130,7 +132,7 @@ override_doctype_class = {
 #	"monthly": [
 #		"hourly_leaves.tasks.monthly"
 #	],
-# }
+}
 
 # Testing
 # -------
