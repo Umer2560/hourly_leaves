@@ -7,10 +7,20 @@ from hourly_leaves.hourly_leaves.utils import update_employee_work_history
 class EmployeePromotion(Document):
 	def on_submit(self):
 		employee = frappe.get_doc("Employee", self.employee)
+		for x in self.promotion_details:
+			if x.fieldname == "position_number":
+				new_des = frappe.db.get_value("Position Number", x.new, "designation")
+				if new_des:
+					row = self.append("promotion_details", {})
+					row.property = 'Designation'
+					row.current = employee.designation
+					row.new = new_des
+					row.fieldname = 'designation'
+		
+		
 		employee = update_employee_work_history(
 			employee, self.promotion_details, date=self.promotion_date
 		)
-
 		if self.revised_ctc:
 			employee.ctc = self.revised_ctc
 

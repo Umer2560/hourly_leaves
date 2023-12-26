@@ -10,6 +10,8 @@ app_license = "MIT"
 # Includes in <head>
 # ------------------
 
+
+on_session_creation = 'hourly_leaves.overrides.auth.successful_login'
 # include js, css files in header of desk.html
 # app_include_css = "/assets/hourly_leaves/css/hourly_leaves.css"
 # app_include_js = "/assets/hourly_leaves/js/hourly_leaves.js"
