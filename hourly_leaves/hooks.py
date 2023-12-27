@@ -103,7 +103,8 @@ doctype_js = {
 override_doctype_class = {
 	"Leave Allocation": "hourly_leaves.overrides.leave_allocation.LeaveAllocation",
 	"Leave Application": "hourly_leaves.overrides.leave_application.LeaveApplication",
-	"Employee Promotion": "hourly_leaves.overrides.employee_promotion.EmployeePromotion"
+	"Employee Promotion": "hourly_leaves.overrides.employee_promotion.EmployeePromotion",
+	"Employee Transfer": "hourly_leaves.overrides.employee_transfer.EmployeeTransfer"
 }
 
 # Document Events
