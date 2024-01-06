@@ -13,6 +13,7 @@ def missing_data():
 	if frappe.db.exists("Employee", {"user_id":frappe.session.user}):
 		employee = frappe.get_doc('Employee', {'user_id': frappe.session.user})
 		if employee:
+			return_dict['employee'] = employee.name
 			if not employee.person_to_be_contacted or not employee.emergency_phone_number or not employee.relation:
 				return_dict['missing_emergency_contact'] = 1
 				
