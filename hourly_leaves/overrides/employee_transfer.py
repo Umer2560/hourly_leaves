@@ -1,7 +1,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from hrms.hr.utils import update_employee_work_history
+from hourly_leaves.hourly_leaves.utils import update_employee_work_history
 from hrms.hr.doctype.employee_transfer.employee_transfer import EmployeeTransfer
 
 class EmployeeTransfer(EmployeeTransfer):

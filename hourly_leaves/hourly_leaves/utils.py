@@ -30,7 +30,15 @@ def update_employee_work_history(employee, details, date=None, cancel=False):
 		setattr(employee, item.fieldname, new_data)
 		if item.fieldname in ["department", "designation", "branch", "position_number"]:
 			internal_work_history[item.fieldname] = item.new
-
+	
+	if "department" not in internal_work_history:
+		internal_work_history['department'] = employee.department
+	if "designation" not in internal_work_history:
+		internal_work_history['designation'] = employee.designation
+	if "position_number" not in internal_work_history:
+		internal_work_history['position_number'] = employee.position_number
+		
+		
 	if internal_work_history and not cancel:
 		internal_work_history["from_date"] = date
 		employee.append("internal_work_history", internal_work_history)
