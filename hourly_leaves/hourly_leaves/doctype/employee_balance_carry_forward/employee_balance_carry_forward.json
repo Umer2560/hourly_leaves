@@ -1,0 +1,94 @@
+{
+ "actions": [],
+ "allow_copy": 1,
+ "allow_rename": 1,
+ "creation": "2024-02-16 00:25:48.721303",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "from_date",
+  "get_allocations",
+  "column_break_t5b4a",
+  "leave_type",
+  "to_date",
+  "section_break_mtg0c",
+  "carry_forward_details",
+  "carry_forward"
+ ],
+ "fields": [
+  {
+   "allow_bulk_edit": 1,
+   "fieldname": "carry_forward_details",
+   "fieldtype": "Table",
+   "label": "Carry Forward Details",
+   "options": "Carry Forward Table"
+  },
+  {
+   "fieldname": "carry_forward",
+   "fieldtype": "Button",
+   "label": "Carry Forward"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "leave_type",
+   "fieldtype": "Link",
+   "label": "Leave Type",
+   "options": "Leave Type"
+  },
+  {
+   "fieldname": "from_date",
+   "fieldtype": "Date",
+   "label": "From Date"
+  },
+  {
+   "fieldname": "to_date",
+   "fieldtype": "Date",
+   "label": "To date"
+  },
+  {
+   "fieldname": "get_allocations",
+   "fieldtype": "Button",
+   "label": "Get Allocations"
+  },
+  {
+   "fieldname": "section_break_mtg0c",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_t5b4a",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "hide_toolbar": 1,
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2024-02-16 01:00:47.204020",
+ "modified_by": "Administrator",
+ "module": "Hourly Leaves",
+ "name": "Employee Balance Carry Forward",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
